@@ -63,6 +63,7 @@ class Polyline(Element):
         else:
             raise StopIteration
 
+
     def length(self):
         return self.getPerimeter()
 
@@ -342,6 +343,7 @@ class Polyline(Element):
         
         return poly
     
+
     def getSegmentByLength(self, startLength, endLength):
         if startLength < 0 or endLength < 0 or startLength >= endLength:
             return Polyline( stroke_width=self.stroke_width, fill=self.fill, head_width=self.head_width, close=False, color=self.color )
@@ -361,6 +363,7 @@ class Polyline(Element):
             poly.points[-1] = self.getPointAtLength(endLength)
 
         return poly
+
 
     def splitByLength(self, length: float) -> list:
         polylines = []

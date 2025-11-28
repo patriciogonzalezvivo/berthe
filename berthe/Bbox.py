@@ -38,7 +38,9 @@ class Bbox(object):
     def setFromPoints(self, points):
         self.min_x, self.min_y = float("inf"), float("inf")
         self.max_x, self.max_y = float("-inf"), float("-inf")
+
         for x, y in points:            # Set min coords
+            print (x, y)
             if x < self.min_x:
                 self.min_x = x
             if y < self.min_y:
@@ -46,8 +48,10 @@ class Bbox(object):
             # Set max coords
             if x > self.max_x:
                 self.max_x = x
-            elif y > self.max_y:
+            if y > self.max_y:
                 self.max_y = y
+
+        print(self.min_x, self.min_y, self.max_x, self.max_y)
 
 
     def join(self, other):

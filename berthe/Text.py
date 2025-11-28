@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from .Element import Element
 from .Polyline import Polyline
 from .Path import Path
@@ -82,6 +74,7 @@ class Text(Element):
             if index == 0:
                 x += self.extra
 
+
         toCenter = transform(bbox.center, rotate=rotate, scale=self.scale)
         translate = [ self.center[0] - toCenter[0], self.center[1] - toCenter[1] ]
 
@@ -101,6 +94,7 @@ class Text(Element):
 
         for poly in polys:
             points.extend( poly.getPoints() )
+
         return points
 
 
@@ -153,7 +147,6 @@ class Text(Element):
 
             path.add( polygon )
             
-
         return path
         
 

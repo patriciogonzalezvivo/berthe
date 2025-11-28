@@ -128,23 +128,24 @@ class Group(Element):
         return points
 
 
-    def getPath(self, **kwargs):
-        import copy
+    # def getPath(self, **kwargs):
+    #     import copy
 
-        path = Path(color=self.color)
-        for el in self.elements:
-            if isinstance(el, Path ):
-                path.add( el )
-            else:
-                if len(kwargs.items()) > 0:
-                    tmp = copy.copy(el)
-                    for key in kwargs:
-                        tmp.__dict__[key] = kwargs[key]
-                        print(key, tmp.__dict__[key])
-                    path.add( tmp.getPath() )
-                else:
-                    path.add( el.getPath() )
-        return path
+    #     path = Path(color=self.color)
+    #     for el in self.elements:
+    #         if isinstance(el, Path ):
+    #             path.add( el )
+    #         else:
+    #             if len(kwargs.items()) > 0:
+    #                 tmp = copy.copy(el)
+    #                 for key in kwargs:
+    #                     tmp.__dict__[key] = kwargs[key]
+    #                     print(key, tmp.__dict__[key])
+    #                 path.add( tmp.getPath() )
+    #             else:
+    #                 # Make sure to end the previous subpath
+    #                 path.add( el.getPath() )
+    #     return path
 
 
     def parseSVGNode(self, node):

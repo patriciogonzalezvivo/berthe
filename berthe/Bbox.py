@@ -39,8 +39,7 @@ class Bbox(object):
         self.min_x, self.min_y = float("inf"), float("inf")
         self.max_x, self.max_y = float("-inf"), float("-inf")
 
-        for x, y in points:            # Set min coords
-            print (x, y)
+        for x, y in points:
             if x < self.min_x:
                 self.min_x = x
             if y < self.min_y:
@@ -50,8 +49,6 @@ class Bbox(object):
                 self.max_x = x
             if y > self.max_y:
                 self.max_y = y
-
-        print(self.min_x, self.min_y, self.max_x, self.max_y)
 
 
     def join(self, other):

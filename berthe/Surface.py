@@ -104,7 +104,6 @@ class Surface(Group):
         svg_str += 'baseProfile="tiny" version="1.2" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" ><defs/>'
 
         for el in self.elements:
-
             if isinstance(el, Group ):
                 grp = el
 
@@ -253,30 +252,30 @@ class Surface(Group):
                 path = path.getTransformed(flip_onY)        
 
             lastPoint = [0.0, 0.0]
-            # convert SVG color to RGB
-            svg_color =  path.color
             rgb = (0.0, 0.0, 0.0)
-            if svg_color.startswith('#') and (len(svg_color) == 7 or len(svg_color) == 4):
-                if len(svg_color) == 7:
-                    r = int(svg_color[1:3], 16) / 255.0
-                    g = int(svg_color[3:5], 16) / 255.0
-                    b = int(svg_color[5:7], 16) / 255.0
-                else:
-                    r = int(svg_color[1]*2, 16) / 255.0
-                    g = int(svg_color[2]*2, 16) / 255.0
-                    b = int(svg_color[3]*2, 16) / 255.0
-                rgb = (r, g, b)
-            elif svg_color.startswith('rgb'):
-                svg_color = svg_color.replace('rgb(', '').replace(')', '')
-                parts = svg_color.split(',')
-                if len(parts) == 3:
-                    r = int(parts[0].strip()) / 255.0
-                    g = int(parts[1].strip()) / 255.0
-                    b = int(parts[2].strip()) / 255.0
+            # convert SVG color to RGB
+            if path.color is not None:
+                svg_color =  path.color
+                if svg_color.startswith('#') and (len(svg_color) == 7 or len(svg_color) == 4):
+                    if len(svg_color) == 7:
+                        r = int(svg_color[1:3], 16) / 255.0
+                        g = int(svg_color[3:5], 16) / 255.0
+                        b = int(svg_color[5:7], 16) / 255.0
+                    else:
+                        r = int(svg_color[1]*2, 16) / 255.0
+                        g = int(svg_color[2]*2, 16) / 255.0
+                        b = int(svg_color[3]*2, 16) / 255.0
                     rgb = (r, g, b)
+                elif svg_color.startswith('rgb'):
+                    svg_color = svg_color.replace('rgb(', '').replace(')', '')
+                    parts = svg_color.split(',')
+                    if len(parts) == 3:
+                        r = int(parts[0].strip()) / 255.0
+                        g = int(parts[1].strip()) / 255.0
+                        b = int(parts[2].strip()) / 255.0
+                        rgb = (r, g, b)
             
             for points in path:
-
                 if debug:
                     dc.set_line_width(1 / scale)
                     dc.set_source_rgb(0.5, 0.0, 0.0)

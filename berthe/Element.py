@@ -33,7 +33,7 @@ class Element(object):
         self.rotate = kwargs.pop('rotate', 0.0)
         self.scale = kwargs.pop('scale', 1.0)
         self.parent = None
-        self.color = kwargs.pop('color', 'black')
+        self.color = kwargs.pop('color', None)
         
     @property
     def isTransformed(self):

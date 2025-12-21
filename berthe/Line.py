@@ -122,5 +122,5 @@ class Line(Element):
         else:
             path.append( self.getPoints() )
 
-        return Path(path)
+        return Path(path, color=self.color, **kwargs)
 

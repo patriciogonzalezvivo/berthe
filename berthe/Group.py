@@ -25,6 +25,12 @@ class Group(Element):
     def __init__( self, id="Untitled", **kwargs ):
         Element.__init__(self, **kwargs);
 
+        # set color
+        if 'color' not in kwargs:
+            self.color = "black"
+        else:
+            self.color = kwargs['color']
+
         self.id = id
         self.elements = []
         self.subgroups = { } 
@@ -223,9 +229,16 @@ class Group(Element):
         svg_str = '<g '
         if self.id != None:
             svg_str += f'id="{self.id}" '
-        svg_str += f'fill="none" stroke="{self.color}" stroke-width="{self.head_width}">'
+
+        if self.color != None:
+            svg_str += f'fill="none" stroke="{self.color}" stroke-width="{self.head_width}">'
+        else:
+            svg_str += f'fill="none" stroke-width="{self.head_width}">'
 
         for el in self.elements:
+            # there is a self.color and no el.color override
+            if el.color == None and self.color != None:
+                el.color = self.color
             svg_str += el.getSVGElementString()
 
         svg_str += '</g>'

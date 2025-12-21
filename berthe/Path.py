@@ -631,7 +631,12 @@ class Path(Element):
         if self.id != None:
             svg_str += 'id="' + self.id + '" '
         svg_str += 'd="' + path_str + '" '
-        svg_str += f'fill="none" stroke="{self.color}" stroke-width="{self.head_width}" '
+
+        if self.color != None:
+            svg_str += f'fill="none" stroke="{self.color}" stroke-width="{self.head_width}" '
+        else:
+            svg_str += f'fill="none" stroke-width="{self.head_width}" '
+
         svg_str += '/>\n'
         
         return svg_str

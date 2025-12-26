@@ -77,7 +77,7 @@ class Circle(Element):
         rx, ry = self.radius
         
         resolution = max(rx, ry)
-        resolution = int(remap(resolution, 1.0, 180.0, 36.0, 180.0))
+        resolution = int(remap(resolution, 1.0, 180.0, 18.0, 180.0))
         resolution = kwargs.pop('resolution', resolution)
         
         points = []

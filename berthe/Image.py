@@ -140,6 +140,11 @@ class Image(object):
 
 
     def dither(self, threshold=0.5, invert=False ):
+        """Floyd-Steinberg dithering algorithm.
+        Note: This implementation uses nested loops which can be slow for large images.
+        For images >1024x1024, consider reducing resolution before dithering.
+        Performance: ~O(width * height) with per-pixel operations.
+        """
         derr = np.zeros(self.data.shape, dtype=float)
 
         div = 8

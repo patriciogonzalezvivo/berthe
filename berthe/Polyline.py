@@ -589,13 +589,33 @@ class Polyline(Element):
             _add_polygon_to_path(poly)
 
         # iteratively inset and collect rings
+        max_iterations = 10000  # Safety limit
+        iteration_count = 0
+        previous_area = getattr(current, "area", 0)
+        
         while True:
+            iteration_count += 1
+            
+            if iteration_count >= max_iterations:
+                break
+            
+            previous = current
             current = current.buffer(-head_width * (1 - overlap))
+            del previous
+            
             if getattr(current, "is_empty", False) or getattr(current, "area", 0) == 0:
                 break
+            
+            current_area = getattr(current, "area", 0)
+            if current_area >= previous_area * 0.99:
+                break
+            previous_area = current_area
+            
             for poly in _iter_polygons(current):
                 _add_polygon_to_path(poly)
 
+        del current
+        
         if simplify:
             path = path.getSimplify()
         
@@ -608,6 +628,7 @@ class Polyline(Element):
             else:
                 path = path.getJoined()
         
+        del polygon
         return path
 
 

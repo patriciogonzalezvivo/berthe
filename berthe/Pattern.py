@@ -37,6 +37,14 @@ class Pattern(Element):
             self.rotate = kwargs.pop('rotate', parent.rotate)
             self.anchor = kwargs.pop('rotate', parent.anchor)
 
+        elif isinstance(parent, Element):
+            # Handle Path and other Element objects by creating empty pattern
+            x = np.zeros(1)
+            x.fill(np.nan)
+            y = np.zeros(1)
+            y.fill(np.nan)
+            self.data = (x, y)
+
         else:
             x, y = parent
             self.data = (x.copy(), y.copy())
@@ -89,11 +97,13 @@ class Pattern(Element):
             y_offset (float): the y component of the center of rotation (optional)
         """
         x, y = self.data
-        x = x.copy() - x_offset
-        y = y.copy() - y_offset
+        # Removed unnecessary .copy() - operations below create new arrays anyway
         angle = np.radians(rotation)
-        x_rot = x * np.cos(angle) + y * np.sin(angle)
-        y_rot = x * -np.sin(angle) + y * np.cos(angle)
+        cos_a, sin_a = np.cos(angle), np.sin(angle)
+        x_centered = x - x_offset
+        y_centered = y - y_offset
+        x_rot = x_centered * cos_a + y_centered * sin_a
+        y_rot = -x_centered * sin_a + y_centered * cos_a
 
         self.data = (x_rot + x_offset, y_rot + y_offset)
 
@@ -116,8 +126,11 @@ class Pattern(Element):
         # First, we convert the points along the pattern into integers within
         # the bounds of the surface's index. The clipping here will also convert
         # the nan values to 0.
-        surface_x = np.clip( np.int32(surface_w * x - 1e-9), 0, surface_w - 1)
-        surface_y = np.clip( np.int32(surface_h * y - 1e-9), 0, surface_h - 1)
+        # Handle NaN values before casting to avoid RuntimeWarning
+        x_safe = np.nan_to_num(x, nan=0.0)
+        y_safe = np.nan_to_num(y, nan=0.0)
+        surface_x = np.clip( np.int32(surface_w * x_safe - 1e-9), 0, surface_w - 1)
+        surface_y = np.clip( np.int32(surface_h * y_safe - 1e-9), 0, surface_h - 1)
 
         # Grab z-values along the pattern path. Note that this will include values
         # for every point, even if it is nan or had to be clipped to within the
@@ -188,8 +201,14 @@ class Pattern(Element):
         elif isinstance(element, Image):
             if element.type == "mask":
                 # mask self.data based on element.data
-                X_mask = np.int32( element.data.shape[1] * (x * width) / width - 1e-9 )
-                Y_mask = np.int32( element.data.shape[0] * (y * height) / height - 1e-9 )
+                # Use nan_to_num to avoid RuntimeWarning on NaN values during cast
+                x_safe = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
+                y_safe = np.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0)
+                # Ensure the computed values are also finite before casting
+                x_calc = element.data.shape[1] * (x_safe * width) / width - 1e-9
+                y_calc = element.data.shape[0] * (y_safe * height) / height - 1e-9
+                X_mask = np.int32(np.nan_to_num(x_calc, nan=0.0, posinf=0.0, neginf=0.0))
+                Y_mask = np.int32(np.nan_to_num(y_calc, nan=0.0, posinf=0.0, neginf=0.0))
                 for i in range(x.shape[0]):
                     if np.isnan(x[i]) or np.isnan(y[i]):
                         continue

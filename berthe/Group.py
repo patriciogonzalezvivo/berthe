@@ -33,7 +33,8 @@ class Group(Element):
 
         self.id = id
         self.elements = []
-        self.subgroups = { } 
+        self.subgroups = { }
+        self.clip_rect = None  # Optional [x, y, w, h] to clip group output via SVG clipPath
 
     def __iter__(self):
         self._index = 0
@@ -226,7 +227,15 @@ class Group(Element):
 
 
     def getSVGElementString(self):
-        svg_str = '<g '
+        result = ''
+        clip_attr = ''
+        if self.clip_rect is not None:
+            x, y, w, h = self.clip_rect
+            clip_id = f"clip_{self.id}"
+            result += f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath></defs>'
+            clip_attr = f'clip-path="url(#{clip_id})" '
+
+        svg_str = f'<g {clip_attr}'
         if self.id != None:
             svg_str += f'id="{self.id}" '
 
@@ -242,7 +251,8 @@ class Group(Element):
             svg_str += el.getSVGElementString()
 
         svg_str += '</g>'
-        
-        return svg_str
+        result += svg_str
+
+        return result
         
 

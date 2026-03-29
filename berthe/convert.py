@@ -233,7 +233,7 @@ def GrayscaleToPattern(grayscale, **kwargs):
 
     # Create pattern
     if pattern is None:
-        pattern_resolution = kwargs.pop('pattern_resolution', min(grayscale.width, grayscale.height) * 0.5)
+        pattern_resolution = int(kwargs.pop('pattern_resolution', min(grayscale.width, grayscale.height) * 0.5))
         pattern_presicion = float(kwargs.pop('pattern_presicion', 1.0))
         pattern_offset = float(kwargs.pop('pattern_offset', 0.0)) 
         pattern = Pattern( stripes_pattern(pattern_resolution, min(grayscale.width, grayscale.height) * pattern_presicion, pattern_offset), **kwargs)
@@ -276,7 +276,7 @@ def HeightmapToPattern(filename, **kwargs):
 
     # Create pattern
     if pattern is None:
-        pattern_resolution = kwargs.pop('pattern_resolution', min(heightmap.width, heightmap.height) * 0.5)
+        pattern_resolution = int(kwargs.pop('pattern_resolution', min(heightmap.width, heightmap.height) * 0.5))
         pattern_presicion = float(kwargs.pop('pattern_presicion', 1.0))
         pattern_offset = float(kwargs.pop('pattern_offset', 0.0)) 
         pattern = Pattern( stripes_pattern(num_lines=pattern_resolution, resolution=min(heightmap.width, heightmap.height) * pattern_presicion, offset=pattern_offset), **kwargs )

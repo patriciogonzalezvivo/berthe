@@ -34,7 +34,9 @@ class Group(Element):
         self.id = id
         self.elements = []
         self.subgroups = { }
-        self.clip_rect = None  # Optional [x, y, w, h] to clip group output via SVG clipPath
+        self.clip_rect        = None  # Optional [x, y, w, h] to clip group output via SVG clipPath
+        self.clip_poly_invert = None  # Optional (points, w, h) — clip to everything OUTSIDE the polygon
+                                      # Uses SVG even-odd fill rule: outer rect punched through by poly.
 
     def __iter__(self):
         self._index = 0
@@ -233,6 +235,18 @@ class Group(Element):
             x, y, w, h = self.clip_rect
             clip_id = f"clip_{self.id}"
             result += f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath></defs>'
+            clip_attr = f'clip-path="url(#{clip_id})" '
+        elif self.clip_poly_invert is not None:
+            # Even-odd inverse clip: keeps strokes OUTSIDE the given polygon.
+            # The <path> covers the full canvas (outer rect) then subtracts the
+            # polygon via the even-odd fill rule, leaving a hole over the subject.
+            pts, w, h = self.clip_poly_invert
+            clip_id   = f"clip_{self.id}"
+            outer     = f"M0,0 H{w} V{h} H0 Z"
+            poly      = "M" + " L".join(f"{px},{py}" for px, py in pts) + " Z"
+            result   += (f'<defs><clipPath id="{clip_id}">'
+                         f'<path fill-rule="evenodd" d="{outer} {poly}"/>'
+                         f'</clipPath></defs>')
             clip_attr = f'clip-path="url(#{clip_id})" '
 
         svg_str = f'<g {clip_attr}'

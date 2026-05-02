@@ -13,6 +13,7 @@ import numpy as np
 # -----------------------------------------------------------------
 
 def normalize(v, tolerance=0.00001):
+    """Return the unit vector of *v*, or ``None`` if *v* is zero-length."""
     mag2 = sum(n * n for n in v)
     if abs(mag2 - 1.0) > tolerance:
         mag = math.sqrt(mag2)
@@ -23,29 +24,31 @@ def normalize(v, tolerance=0.00001):
 
 
 def dot(v1, v2):
-    n = 0
-    lim = min( len(v1) , len(v2) )
-    for i in range(lim):
-        n += v1[i] * v2[i]
-    return n
+    """Dot product of two sequences of equal or unequal length (uses the shorter)."""
+    lim = min(len(v1), len(v2))
+    return float(np.dot(v1[:lim], v2[:lim]))
 
 
 def length(v):
-    return math.sqrt(sum(n * n for n in v))
+    """Euclidean length of vector *v*."""
+    return float(np.linalg.norm(v))
 
 
 def distance(A, B):
+    """Euclidean distance between points *A* and *B*."""
     ab = np.array(B) - np.array(A)
     return np.sqrt( ab[0] * ab[0] + ab[1] * ab[1] )
 
 
 def perpendicular(A, B):
+    """Unit vector perpendicular to the segment A→B, rotated 90° CCW."""
     ab = np.array(B) - np.array(A)
     dir_ab = normalize(ab)
     return np.array([-dir_ab[1], dir_ab[0]])
 
 
 def rotate(xy, deg, anchor=[0, 0]):
+    """Rotate point *xy* by *deg* degrees around *anchor*."""
     radians = math.radians(deg)
     x, y = xy
 
@@ -60,6 +63,7 @@ def rotate(xy, deg, anchor=[0, 0]):
 
 
 def clamp(value, min_value, max_value):
+    """Clamp *value* to the inclusive range [*min_value*, *max_value*]."""
     return max(min(value, max_value), min_value)
 
 
@@ -96,6 +100,7 @@ def transform(xy, rotate = 0, scale = [1,1], translate = [0,0], anchor=[0, 0]):
 
 
 def remap(value, in_min, in_max, out_min, out_max):
+    """Linearly remap *value* from [*in_min*, *in_max*] to [*out_min*, *out_max*]."""
     in_span = in_max - in_min
     out_span = out_max - out_min
 
@@ -106,6 +111,7 @@ def remap(value, in_min, in_max, out_min, out_max):
 
 
 def lerp(A, B, t):
+    """Linear interpolation: return A + (B - A) * t.  Works for scalars and arrays."""
     A = np.array(A)
     B = np.array(B)
     return A * (1.0 - t) + B * t
@@ -114,6 +120,7 @@ def lerp(A, B, t):
 # -----------------------------------------------------------------
 
 def points_length(points):
+    """Total arc-length of an open polyline defined by a list of (x, y) pairs."""
     result = 0
     for (x1, y1), (x2, y2) in zip(points, points[1:]):
         result += math.hypot(x2 - x1, y2 - y1)
@@ -121,6 +128,7 @@ def points_length(points):
 
 
 def path_length(path):
+    """Sum of arc-lengths of all sub-paths in *path* (a list of polylines)."""
     return sum([points_length(path) for path in path], 0)
 
 
@@ -142,6 +150,11 @@ def join_path(path, tolerance):
 # -----------------------------------------------------------------
 
 def polar2xy(center, angle, radius):
+    """Convert polar coordinates to Cartesian (x, y).
+
+    *angle* is in degrees, measured counter-clockwise from the positive X axis.
+    *radius* may be a scalar or a (rx, ry) tuple for elliptical coordinates.
+    """
     a = math.radians(angle)
     rx = 1.0
     ry = 1.0
@@ -156,6 +169,7 @@ def polar2xy(center, angle, radius):
 
 
 def xy2polar(center, pos):
+    """Convert Cartesian *pos* to (angle_degrees, radius) relative to *center*."""
     ab = np.array(pos) - np.array(center)
 
     dist = np.sqrt( ab[0] * ab[0] + ab[1] * ab[1] )

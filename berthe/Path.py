@@ -105,6 +105,15 @@ class Path(Element):
         return self.bounds.height
     
 
+    def getPath(self, **kwargs):
+        """Return self — Path is already a path; avoids the Element fallback that
+        flattens all sub-paths into one via getPoints(), producing diagonal pen-down
+        moves between every segment when the Path is added directly to a Surface."""
+        optimize = kwargs.pop('optimize', False)
+        if optimize:
+            return self.getSimplify().getSorted()
+        return self
+
     def add(self, other):
         from .Polyline import Polyline
 

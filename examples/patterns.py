@@ -1,50 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Display all sashiko patterns in a grid, one tile per pattern, with a label.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+Output: sashiko_patterns.svg
+"""
 
-from Surface import *
+import sys
+import os
+import numpy as np
 
-heightmap = Image('lucy_depth.png')
-axi = Surface()
-contours = ImageContourToPath(heightmap, 0.1).getScaled(0.1)
-contour = Polyline( contours.path[0] )
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-axi = Surface()
+from berthe import Surface, Pattern, Group, Text
+from berthe.pattern_generators import SASHIKO_PATTERNS, sashiko_pattern
 
-pattern_strip = Pattern( stripes_pattern(num_lines=100, resolution=100) )
-axi.pattern( pattern_strip )
-pattern_strip.turn(45)
-axi.pattern( pattern_strip, translate=[100.0, 0.0], scale=0.70)
-pattern_strip.mask( contour, 100, 100)
-axi.pattern( pattern_strip, translate=[200.0, 0.0])
+# ── Layout ────────────────────────────────────────────────────────────────────
+TILE   = 40       # mm per tile (square)
+COLS   = 6        # tiles per row
+PAD    = 4        # mm gap between tiles
+LABEL  = 6        # mm reserved below each tile for the name
+N      = 8        # pattern density (cells across)
 
+names  = list(SASHIKO_PATTERNS.keys())
+rows   = (len(names) + COLS - 1) // COLS
+step   = TILE + PAD
+width  = COLS * step + PAD
+height = rows * (step + LABEL) + PAD
 
-pattern_crosses = Pattern(crosses_patterns(resolution=33))
-axi.pattern( pattern_crosses, translate=[0.0, 100.0])
-pattern_crosses.turn(45)
-axi.pattern( pattern_crosses, translate=[100.0, 100.0], scale=0.70 )
-pattern_crosses.mask( contour, 100, 100)
-axi.pattern( pattern_crosses, translate=[200.0, 100.0])
+axi = Surface(width=width, height=height)
 
+for i, name in enumerate(names):
+    col = i % COLS
+    row = i // COLS
 
-# pattern_grid = Pattern( grid_pattern(num_h_lines=50, num_v_lines=50 ) )
-# axi.pattern( pattern_grid, translate=[0.0, 100.0])
-# pattern_grid.turn(45)
-# axi.pattern( pattern_grid, translate=[100.0, 100.0], scale=0.70 )
-# pattern_grid.mask( contour, 100, 100)
-# axi.pattern( pattern_grid, translate=[200.0, 100.0])
+    ox = PAD + col * step
+    oy = PAD + row * (step + LABEL)
 
-# pattern_spiral = Pattern( spiral_pattern(spirals=20) )
-# axi.pattern( pattern_spiral, translate=[0.0, 200.0])
-# pattern_spiral.mask( contour, 100, 100)
-# axi.pattern( pattern_spiral, translate=[0.0, 300.0])
+    # Generate pattern in [0,1]², mapped to TILE×TILE, translated to (ox, oy)
+    x, y = sashiko_pattern(name, n=N)
+    pat = Pattern((x, y), width=TILE, height=TILE, translate=np.array([ox, oy]))
+    path = pat.getPath()
 
-# pattern_hex = Pattern( hex_pattern(), scale=0.01 )
-# pattern_hex.mask( contour, 100, 100)
-# axi.pattern( pattern_hex, translate=[100.0, 200.0])
+    grp = Group(name=f'pat_{name}')
+    grp.add(path)
 
-axi.toSVG('pattern.svg')
+    # Label centred below the tile
+    lx = ox + TILE / 2.0
+    ly = oy + TILE + LABEL * 0.65
+    grp.add( Text(name, (lx, ly), scale=0.07, align='center') )
+
+    axi.add(grp)
+
+axi.toSVG('sashiko_patterns.svg')
+print(f"Saved sashiko_patterns.svg  ({len(names)} patterns, {COLS}×{rows} grid)")

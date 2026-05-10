@@ -6,15 +6,21 @@ from .hershey_fonts import *
 from .tools import transform
 
 class Text(Element):
-    def __init__( self, text, center, **kwargs ):
+    def __init__( self, text, pos, **kwargs ):
         Element.__init__(self, **kwargs);
         self.text = str(text)
-        self._center = center
-
         self.font =  kwargs.pop('font', FUTURAL)
-        self.spacing =  kwargs.pop('spacing', 0)
+        self.letter_spacing = kwargs.pop('letter_spacing', kwargs.pop('spacing', 0))
         self.extra =  kwargs.pop('extra', 0)
         self.auto_flip = kwargs.pop('auto_flip', False )
+        self.align = kwargs.pop('align', 'center');
+        self.weight = kwargs.pop('weight', 100)
+        if self.align == 'center':
+            self._center = pos
+        elif self.align == 'left':
+            self._center = (pos[0] + self.length / 2.0, pos[1])
+        elif self.align == 'right':
+            self._center = (pos[0] - self.length / 2.0, pos[1])
 
 
     @property
@@ -28,11 +34,11 @@ class Text(Element):
         for ch in self.text:
             index = ord(ch) - 32
             if index < 0 or index >= 96:
-                x += self.spacing
+                x += self.letter_spacing
                 continue
 
             lt, rt, coords = self.font[index]
-            x += rt - lt + self.spacing
+            x += rt - lt + self.letter_spacing
 
         if isinstance(self.scale, tuple) or isinstance(self.scale, list):
             x *= self.scale[0]
@@ -45,7 +51,7 @@ class Text(Element):
     def getPolylines(self, **kwargs):
         rotate = kwargs.pop('rotate', self.rotate )
         stroke_width = kwargs.pop('stroke_width', self.stroke_width )
-        
+
         if self.auto_flip:
             if rotate >= 90 and rotate < 270:
                 rotate += 180
@@ -60,7 +66,7 @@ class Text(Element):
         for ch in self.text:
             index = ord(ch) - 32
             if index < 0 or index >= 96:
-                x += self.spacing
+                x += self.letter_spacing
                 continue
 
             lt, rt, coords = self.font[index]
@@ -70,22 +76,31 @@ class Text(Element):
                     line = Polyline(path)
                     bbox.join( line.bounds )
                     result.append( line )
-            x += rt - lt + self.spacing
+            x += rt - lt + self.letter_spacing
             if index == 0:
                 x += self.extra
-
 
         toCenter = transform(bbox.center, rotate=rotate, scale=self.scale)
         translate = [ self.center[0] - toCenter[0], self.center[1] - toCenter[1] ]
 
+        # weight scales stroke_width only; head_width (nib size) stays constant.
+        # Polyline.getStrokePath fans offset passes from +r to -r stepping by head_width,
+        # so a larger stroke_width produces more passes → thicker appearance.
+        weighted_sw = self.head_width * (self.weight / 100.0)
+
         polys = []
         for line in result:
-            points = []
-            for point in line.points:
-                points.append( transform(point, translate=translate, rotate=rotate, scale=self.scale) )
-            polys.append( Polyline(points, stroke_width=stroke_width) )
+            points = [ transform(p, translate=translate, rotate=rotate, scale=self.scale) for p in line.points ]
+            base = Polyline(points, stroke_width=weighted_sw, head_width=self.head_width)
+            for seg in base.getStrokePath():
+                polys.append( Polyline(seg.getPoints(), stroke_width=self.head_width, head_width=self.head_width) )
 
         return polys
+
+
+    def getStrokePath(self, **kwargs):
+        polys = self.getPolylines(**kwargs)
+        return Path([ poly.getPoints() for poly in polys ], stroke_width=self.head_width, head_width=self.head_width, color=self.color)
 
 
     def getPoints(self):

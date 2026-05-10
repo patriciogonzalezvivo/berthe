@@ -23,20 +23,25 @@ from .tools import dom2dict, parse_transform
 
 class Group(Element):
     def __init__( self, id="Untitled", **kwargs ):
+        name = kwargs.pop('name', None)
+        children = kwargs.pop('children', [])
+
         Element.__init__(self, **kwargs);
 
-        # set color
-        if 'color' not in kwargs:
+        # set color — Element.__init__ already popped 'color' into self.color;
+        # only default to black if none was provided.
+        if self.color is None:
             self.color = "black"
-        else:
-            self.color = kwargs['color']
 
-        self.id = id
+        self.id = name if name is not None else id
         self.elements = []
         self.subgroups = { }
         self.clip_rect        = None  # Optional [x, y, w, h] to clip group output via SVG clipPath
         self.clip_poly_invert = None  # Optional (points, w, h) — clip to everything OUTSIDE the polygon
                                       # Uses SVG even-odd fill rule: outer rect punched through by poly.
+
+        for child in children:
+            self.add(child)
 
     def __iter__(self):
         self._index = 0
@@ -63,6 +68,11 @@ class Group(Element):
             return None
 
 
+    @property
+    def children(self):
+        return self.elements
+
+
     def add(self, element ):
         element.parent = self
         self.elements.append(element)
@@ -79,16 +89,16 @@ class Group(Element):
         return self.add( Arc(start_pos, end_pos, radius, **kwargs) )
 
 
-    def circle(self, center, radius, **kwargs):
-        return self.add( Circle(center, radius, **kwargs) )
+    def circle(self, pos, radius, **kwargs):
+        return self.add( Circle(pos, radius, **kwargs) )
 
 
-    def rect(self, center, size, **kwargs):
-        return self.add( Rectangle(center, size, **kwargs) )
+    def rect(self, pos, size, **kwargs):
+        return self.add( Rectangle(pos, size, **kwargs) )
 
 
-    def hex(self, center, radius, **kwargs):
-        return self.add( Hexagon( center, radius, **kwargs) )
+    def hex(self, pos, radius, **kwargs):
+        return self.add( Hexagon( pos, radius, **kwargs) )
 
 
     def polyline(self, points, **kwargs):
@@ -103,8 +113,8 @@ class Group(Element):
         return self.add( Path(path, **kwargs) )
 
 
-    def text(self, text, center, **kwargs):
-        return self.add( Text(text, center, **kwargs) )
+    def text(self, text, pos, **kwargs):
+        return self.add( Text(text, pos, **kwargs) )
 
 
     def pattern(self, pattern, **kwargs):

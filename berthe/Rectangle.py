@@ -12,9 +12,40 @@ import numpy as np
 from .Element import Element
 
 class Rectangle(Element):
-    def __init__( self, center, size, **kwargs ):
+    def __init__( self, pos, size, **kwargs ):
         Element.__init__(self, **kwargs);
-        self._center = np.array(center)
+
+        # support both 'anchor' and 'align' (consistent with Text)
+        self.anchor = kwargs.pop('anchor', kwargs.pop('align', 'center'))
+
+        if isinstance(self.scale, (tuple, list)):
+            sx, sy = self.scale[0], self.scale[1]
+        else:
+            sx = sy = self.scale
+
+        hw = size[0] * 0.5 * sx
+        hh = size[1] * 0.5 * sy
+
+        if self.anchor == 'center':
+            self._center = pos
+        elif self.anchor == 'top_left':
+            self._center = (pos[0] + hw, pos[1] + hh)
+        elif self.anchor == 'top_right':
+            self._center = (pos[0] - hw, pos[1] + hh)
+        elif self.anchor == 'bottom_left':
+            self._center = (pos[0] + hw, pos[1] - hh)
+        elif self.anchor == 'bottom_right':
+            self._center = (pos[0] - hw, pos[1] - hh)
+        elif self.anchor == 'left':
+            self._center = (pos[0] + hw, pos[1])
+        elif self.anchor == 'right':
+            self._center = (pos[0] - hw, pos[1])
+        elif self.anchor == 'top':
+            self._center = (pos[0], pos[1] + hh)
+        elif self.anchor == 'bottom':
+            self._center = (pos[0], pos[1] - hh)
+
+        self._center = np.array(self._center)
         self.size = size
         # self.size[0] = float(kwargs.pop('width', size[0]))
         # self.size[1] = float(kwargs.pop('height', size[1]))
@@ -70,18 +101,27 @@ class Rectangle(Element):
 
     def getCoorners(self):
         cx, cy = self.center
-        rx, ry = self.radius
 
-        x = self.width * 0.5
-        y = self.height * 0.5
+        if isinstance(self.scale, (tuple, list)):
+            hw = self.width * 0.5 * self.scale[0]
+            hh = self.height * 0.5 * self.scale[1]
+        else:
+            hw = self.width * 0.5 * self.scale
+            hh = self.height * 0.5 * self.scale
 
-        coorners = [ [1.0,1.0], [1.0,-1.0], [-1.0,-1.0], [-1.0,1.0] ]
+        if self.rotate != 0.0:
+            c = math.cos(math.radians(self.rotate))
+            s = math.sin(math.radians(self.rotate))
+            def rot(x, y):
+                return [cx + x * c - y * s, cy + x * s + y * c]
+            return [rot(hw, hh), rot(hw, -hh), rot(-hw, -hh), rot(-hw, hh)]
 
-        points = []
-        for i in range(0, 4):
-            a = math.atan2( y * coorners[i][1], x * coorners[i][0] )
-            points.append( [cx + rx * math.cos(a), cy + ry * math.sin(a)] )
-        return points
+        return [
+            [cx + hw, cy + hh],
+            [cx + hw, cy - hh],
+            [cx - hw, cy - hh],
+            [cx - hw, cy + hh],
+        ]
 
 
     def getPoints(self):
@@ -105,46 +145,60 @@ class Rectangle(Element):
     def getStrokePath(self, **kwargs):
         from .Path import Path
         
-        cx, cy = self.center
+        corners = self.getCoorners()
+        # Corner order from getCoorners: [TR, BR, BL, TL]
+        signs = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
+
+        half_stroke = (self.stroke_width * self.head_width) * 0.5
+
+        def make_ring(d):
+            ring = [[px + sx * d, py + sy * d] for (px, py), (sx, sy) in zip(corners, signs)]
+            ring.append(ring[0])
+            return ring
 
         path = []
         if self.stroke_width > self.head_width or self.fill:
-            width = self.width + (self.stroke_width * self.head_width)
-            height = self.height + (self.stroke_width * self.head_width)
-            width_target = self.width - (self.stroke_width * self.head_width)
-            height_target = self.height - (self.stroke_width * self.head_width)
-
-            while width > width_target or height > height_target:
-                path.append( Rectangle([cx, cy], [width, height], fill=self.fill, rotate=self.rotate).getPoints() )
-                width = max(width - self.head_width * 2.0, width_target)
-                height = max(height - self.head_width * 2.0, height_target)
-
+            d = half_stroke
+            d_target = -half_stroke
+            path.append(make_ring(d))
+            while d > d_target:
+                d = max(d - self.head_width, d_target)
+                path.append(make_ring(d))
         else:
-            path.append( self.getPoints() )
+            path.append(self.getPoints())
+
         return Path(path)
 
     
     def getFillPath(self, **kwargs):
         from .Path import Path
         
-        cx, cy = self.center
-        rx, ry = self.radius 
+        corners = self.getCoorners()
+        signs = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
+
+        if isinstance(self.scale, (tuple, list)):
+            min_dim = min(self.width * self.scale[0], self.height * self.scale[1]) * 0.5
+        else:
+            min_dim = min(self.width, self.height) * self.scale * 0.5
+
+        half_stroke = (self.stroke_width * self.head_width) * 0.5
+
+        def make_ring(d):
+            ring = [[px + sx * d, py + sy * d] for (px, py), (sx, sy) in zip(corners, signs)]
+            ring.append(ring[0])
+            return ring
 
         path = []
         if self.stroke_width > self.head_width or self.fill:
-            width = self.width - (self.stroke_width * self.head_width)
-            height = self.height - (self.stroke_width * self.head_width)
-
-            width_target = 0.0
-            height_target = 0.0
-
-            while width > width_target or height > height_target:
-                path.append( Rectangle([cx, cy], [width, height], fill=self.fill, rotate=self.rotate).getPoints() )
-                width = max(width - self.head_width * 2.0, width_target)
-                height = max(height - self.head_width * 2.0, height_target)
-
+            d = -half_stroke
+            d_target = -min_dim
+            path.append(make_ring(d))
+            while d > d_target:
+                d = max(d - self.head_width, d_target)
+                path.append(make_ring(d))
         else:
-            path.append( self.getPoints() )
+            path.append(self.getPoints())
+
         return Path(path)
 
 

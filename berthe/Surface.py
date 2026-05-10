@@ -255,7 +255,7 @@ class Surface(Group):
             rgb = (0.0, 0.0, 0.0)
             # convert SVG color to RGB
             if path.color is not None:
-                svg_color =  path.color
+                svg_color = path.color
                 if svg_color.startswith('#') and (len(svg_color) == 7 or len(svg_color) == 4):
                     if len(svg_color) == 7:
                         r = int(svg_color[1:3], 16) / 255.0
@@ -274,6 +274,18 @@ class Surface(Group):
                         g = int(parts[1].strip()) / 255.0
                         b = int(parts[2].strip()) / 255.0
                         rgb = (r, g, b)
+                else:
+                    _named = {
+                        'black': (0,0,0), 'white': (1,1,1),
+                        'red': (1,0,0), 'green': (0,0.502,0), 'blue': (0,0,1),
+                        'yellow': (1,1,0), 'cyan': (0,1,1), 'magenta': (1,0,1),
+                        'orange': (1,0.647,0), 'purple': (0.502,0,0.502),
+                        'pink': (1,0.753,0.796), 'brown': (0.647,0.165,0.165),
+                        'grey': (0.502,0.502,0.502), 'gray': (0.502,0.502,0.502),
+                        'lime': (0,1,0), 'navy': (0,0,0.502),
+                        'teal': (0,0.502,0.502), 'silver': (0.753,0.753,0.753),
+                    }
+                    rgb = _named.get(svg_color.lower(), (0, 0, 0))
             
             for points in path:
                 if debug:
@@ -292,17 +304,23 @@ class Surface(Group):
                     lastPoint = [x, y]
                 dc.stroke()
 
-        for el in self.elements:
-            if isinstance(el, Group ):
-                grp = el
-                for el in grp.elements:
-                    if isinstance(el, Path ):
-                        draw_path(dc, el)
-                    else:
-                        draw_path(dc, el.getPath())
+        def draw_element(el, inherited_color=None):
+            if isinstance(el, Group):
+                group_color = el.color if el.color is not None else inherited_color
+                for child in el.elements:
+                    draw_element(child, inherited_color=group_color)
+            elif isinstance(el, Path):
+                if el.color is None and inherited_color is not None:
+                    el.color = inherited_color
+                draw_path(dc, el)
             else:
                 path = el.getPath()
+                if path.color is None and inherited_color is not None:
+                    path.color = inherited_color
                 draw_path(dc, path)
+
+        for el in self.elements:
+            draw_element(el)
 
         surface.write_to_png(filename)
 

@@ -4,6 +4,46 @@ from .Path import Path
 from .Bbox import Bbox
 from .hershey_fonts import *
 from .tools import transform
+import math
+
+
+def _offset_stroke(points, offset):
+    """Offset a polyline's points perpendicularly by `offset` units.
+    Works correctly for 2-point strokes (which Hershey fonts mostly are).
+    For each interior point, averages the normals of adjacent segments."""
+    n = len(points)
+    if n < 2 or abs(offset) < 1e-9:
+        return points
+
+    # compute per-segment normals
+    seg_normals = []
+    for i in range(n - 1):
+        dx = points[i+1][0] - points[i][0]
+        dy = points[i+1][1] - points[i][1]
+        length = math.sqrt(dx*dx + dy*dy)
+        if length < 1e-9:
+            seg_normals.append((0.0, 0.0))
+        else:
+            seg_normals.append((-dy / length, dx / length))
+
+    # assign per-point normals (average adjacent segments)
+    pt_normals = []
+    for i in range(n):
+        if i == 0:
+            nx, ny = seg_normals[0]
+        elif i == n - 1:
+            nx, ny = seg_normals[-1]
+        else:
+            ax, ay = seg_normals[i-1]
+            bx, by = seg_normals[i]
+            nx, ny = ax + bx, ay + by
+            mag = math.sqrt(nx*nx + ny*ny)
+            if mag > 1e-9:
+                nx, ny = nx / mag, ny / mag
+        pt_normals.append((nx, ny))
+
+    return [(p[0] + nx * offset, p[1] + ny * offset)
+            for p, (nx, ny) in zip(points, pt_normals)]
 
 class Text(Element):
     def __init__( self, text, pos, **kwargs ):
@@ -15,6 +55,7 @@ class Text(Element):
         self.auto_flip = kwargs.pop('auto_flip', False )
         self.align = kwargs.pop('align', 'center');
         self.weight = kwargs.pop('weight', 100)
+        self.stroke_width = self.weight * self.head_width / 100.0
         if self.align == 'center':
             self._center = pos
         elif self.align == 'left':
@@ -83,29 +124,29 @@ class Text(Element):
         toCenter = transform(bbox.center, rotate=rotate, scale=self.scale)
         translate = [ self.center[0] - toCenter[0], self.center[1] - toCenter[1] ]
 
-        # weight scales stroke_width only; head_width (nib size) stays constant.
-        # Polyline.getStrokePath fans offset passes from +r to -r stepping by head_width,
-        # so a larger stroke_width produces more passes → thicker appearance.
-        weighted_sw = self.head_width * (self.weight / 100.0)
+        # weight=100 → 1 pass; weight=200 → 3 passes; weight=300 → 5 passes …
+        # Each extra 100 weight units adds one pass either side, spaced head_width apart.
+        n_extra = max(0, round((self.weight - 100) / 100.0))
+        offsets = [i * self.head_width for i in range(-n_extra, n_extra + 1)]
 
         polys = []
         for line in result:
             points = [ transform(p, translate=translate, rotate=rotate, scale=self.scale) for p in line.points ]
-            base = Polyline(points, stroke_width=weighted_sw, head_width=self.head_width)
-            for seg in base.getStrokePath():
-                polys.append( Polyline(seg.getPoints(), stroke_width=self.head_width, head_width=self.head_width) )
+            for off in offsets:
+                pts = _offset_stroke(points, off)
+                polys.append( Polyline(pts, head_width=self.head_width) )
 
         return polys
 
 
     def getStrokePath(self, **kwargs):
         polys = self.getPolylines(**kwargs)
-        return Path([ poly.getPoints() for poly in polys ], stroke_width=self.head_width, head_width=self.head_width, color=self.color)
+        return Path([ poly.getPoints() for poly in polys ], head_width=self.head_width, color=self.color)
 
 
     def getPoints(self):
         points = []
-        polys = self.getPolylines( stroke_width=self.head_width )
+        polys = self.getPolylines( stroke_width=self.stroke_width )
 
         for poly in polys:
             points.extend( poly.getPoints() )
@@ -122,7 +163,7 @@ class Text(Element):
         if geometry is None:
             raise Exception('To convert a Text to a Shapely MultiPolygon requires shapely. Try: pip install shapely')
 
-        polys = self.getPolylines( stroke_width=self.head_width )
+        polys = self.getPolylines( stroke_width=self.stroke_width )
         polygons = []
         for poly in polys:
             polygons.append( poly._toShapelyLineString() )
@@ -136,7 +177,7 @@ class Text(Element):
 
         from .Polygon import Polygon
 
-        polys = self.getPolylines( stroke_width=self.head_width )
+        polys = self.getPolylines( stroke_width=self.stroke_width )
         polygons = []
         for poly in polys:
             polygons.append( poly._toShapelyLineString().buffer(offset) )

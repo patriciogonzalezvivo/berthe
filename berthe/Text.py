@@ -125,17 +125,13 @@ class Text(Element):
 
         # weight=100 → 1 pass at offset 0.
         # spread = how far out from centre (in mm) each side.
-        # Passes are evenly spaced by head_width, symmetric around 0.
-        # Intermediate weights (150, 220 …) produce the right fractional spread.
-        spread = (self.weight / 100.0 - 1.0) * self.head_width
-        if spread <= 1e-9:
-            offsets = [0.0]
-        else:
-            offsets = []
-            o = -spread
-            while o <= spread + 1e-9:
-                offsets.append(o)
-                o += self.head_width
+        # n = number of passes.  Rounds weight to nearest 50 so that:
+        #   weight=100 → 1 pass,  weight=140/150 → 2 passes,
+        #   weight=200 → 3 passes, weight=250 → 4 passes,  weight=300 → 5 passes …
+        # Passes are always spaced head_width apart and centred at 0.
+        n = max(1, int(self.weight / 50.0 + 0.5) - 1)
+        offsets = [-(n - 1) / 2.0 * self.head_width + i * self.head_width
+                   for i in range(n)]
 
         polys = []
         for line in result:

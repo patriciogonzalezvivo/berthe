@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 from .Group import *
 from .Image import *
+from .Bitmap import Bitmap
 # from .Pattern import *
 # from .Polyline import Polyline
 
@@ -121,6 +122,16 @@ class Surface(Group):
                     grp = grp.getTransformed(flip_onY)
 
                 svg_str += grp.getSVGElementString()
+
+            elif isinstance(el, Bitmap):
+                # Bitmap placed directly on the Surface (not inside a Group).
+                # Apply margin translation only; flip_x/flip_y are not yet
+                # supported at this level for Bitmap elements.
+                bm = el
+                if margin[0] != 0.0 or margin[1] != 0.0:
+                    bm = bm.getTransformed(lambda x, y: (x + margin[0], y + margin[1]))
+                svg_str += bm.getSVGElementString()
+
             else:
                 path = el.getPath()
 
@@ -309,6 +320,8 @@ class Surface(Group):
                 group_color = el.color if el.color is not None else inherited_color
                 for child in el.elements:
                     draw_element(child, inherited_color=group_color)
+            elif isinstance(el, Bitmap):
+                el.drawToCairo(dc, scale, flip_y=flip_y, surface_height=self.height)
             elif isinstance(el, Path):
                 if el.color is None and inherited_color is not None:
                     el.color = inherited_color
@@ -392,6 +405,8 @@ class Surface(Group):
                 grp_color = el.color if el.color is not None else inherited_color
                 for child in el.elements:
                     _walk(child, inherited_color=grp_color)
+            elif isinstance(el, Bitmap):
+                path_lines.append(el.getTeXString(flip_y=flip_y, surface_height=self.height))
             elif isinstance(el, Path):
                 old_color = el.color
                 if el.color is None and inherited_color is not None:

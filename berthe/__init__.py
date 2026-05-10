@@ -24,6 +24,7 @@ from .Group import Group
 from .Path import Path
 
 from .Image import Image
+from .Bitmap import Bitmap
 from .convert import *
 
 from .Pattern import Pattern

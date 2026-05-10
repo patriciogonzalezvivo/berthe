@@ -18,6 +18,7 @@ from .Polygon import Polygon
 from .Text import Text
 from .Path import Path
 from .Pattern import Pattern
+from .Bitmap import Bitmap
 
 from .tools import dom2dict, parse_transform
 
@@ -127,11 +128,32 @@ class Group(Element):
         return self.add( g )
 
 
+    def bitmap(self, filepath, pos, **kwargs):
+        """Add a raster image element at *pos* (mm) and return it.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the image file (PNG, JPEG, …).
+        pos : (x, y)
+            Anchor position in mm.
+        align : str
+            Anchor edge/corner on the image.  Default ``'top_left'``.
+        scale : float
+            Display width in mm.  Height is derived from the aspect ratio.
+        rotate : float
+            Rotation in degrees (CCW).  Default 0.
+        """
+        return self.add( Bitmap(filepath, pos, **kwargs) )
+
+
     def getTransformed(self, func):
         new_group = Group(self.id, fill=self.fill, stroke_width=self.stroke_width, head_width=self.head_width, color=self.color)
 
         for el in self.elements:
             if isinstance(el, Path) or isinstance(el, Group):
+                new_el = el.getTransformed(func)
+            elif isinstance(el, Bitmap):
                 new_el = el.getTransformed(func)
             else:
                 new_el = el.getPath().getTransformed(func)

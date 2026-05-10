@@ -325,6 +325,107 @@ class Surface(Group):
         surface.write_to_png(filename)
 
 
+    def toTeX(self, filename: str, **kwargs) -> None:
+        """Export as a TikZ/LaTeX file.
+
+        Parameters
+        ----------
+        standalone : bool
+            Wrap in a complete LaTeX document (default True).
+            Set False to emit only the tikzpicture block for \input{}.
+        flip_y : bool
+            Flip Y-axis so SVG top-left becomes TikZ top-left (default True).
+        """
+        standalone = kwargs.pop('standalone', True)
+        flip_y     = kwargs.pop('flip_y', True)
+
+        # TikZ basic named colors (pgf/tikz built-ins)
+        _tikz_basic = {
+            'black', 'white', 'red', 'green', 'blue', 'cyan', 'magenta', 'yellow',
+            'orange', 'purple', 'brown', 'lime', 'olive', 'pink', 'teal', 'violet',
+            'darkgray', 'gray', 'lightgray',
+        }
+
+        color_defs = {}   # tikz_name → (R, G, B) int tuple
+
+        def _to_tikz_color(color):
+            if color is None:
+                return 'black'
+            c = color.strip().lower()
+            if c in _tikz_basic:
+                return c
+            rgb = None
+            if c.startswith('#') and len(c) in (4, 7):
+                if len(c) == 7:
+                    rgb = (int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16))
+                else:
+                    rgb = (int(c[1] + c[1], 16), int(c[2] + c[2], 16), int(c[3] + c[3], 16))
+            elif c.startswith('rgb('):
+                parts = c[4:-1].split(',')
+                if len(parts) == 3:
+                    rgb = tuple(int(p.strip()) for p in parts)
+            if rgb is not None:
+                cname = 'bcolor{:02x}{:02x}{:02x}'.format(*rgb)
+                color_defs[cname] = rgb
+                return cname
+            return 'black'
+
+        path_lines = []
+
+        def _emit_path(path, inherited_color=None):
+            color = path.color if path.color is not None else inherited_color
+            tikz_color = _to_tikz_color(color)
+            lw_mm = path.head_width  # physical pen width in mm
+            for polyline in path:
+                pts = list(polyline)  # (x, y) tuples with transforms applied
+                if len(pts) < 2:
+                    continue
+                if flip_y:
+                    pts = [(x, self.height - y) for x, y in pts]
+                coord_str = ' -- '.join('({:.3f},{:.3f})'.format(x, y) for x, y in pts)
+                path_lines.append(
+                    '  \\draw[color={},line width={}mm] {};'.format(tikz_color, lw_mm, coord_str)
+                )
+
+        def _walk(el, inherited_color=None):
+            if isinstance(el, Group):
+                grp_color = el.color if el.color is not None else inherited_color
+                for child in el.elements:
+                    _walk(child, inherited_color=grp_color)
+            elif isinstance(el, Path):
+                old_color = el.color
+                if el.color is None and inherited_color is not None:
+                    el.color = inherited_color
+                _emit_path(el)
+                el.color = old_color
+            else:
+                path = el.getPath()
+                if path.color is None and inherited_color is not None:
+                    path.color = inherited_color
+                _emit_path(path)
+
+        for el in self.elements:
+            _walk(el)
+
+        out = []
+        if standalone:
+            out += [
+                r'\documentclass[tikz,border=2mm]{standalone}',
+                r'\usepackage{tikz}',
+                r'\begin{document}',
+            ]
+        out.append(r'\begin{tikzpicture}[x=1mm,y=1mm]')
+        for cname, rgb in color_defs.items():
+            out.append('  \\definecolor{{{}}}{{RGB}}{{{},{},{}}}'.format(cname, *rgb))
+        out.extend(path_lines)
+        out.append(r'\end{tikzpicture}')
+        if standalone:
+            out.append(r'\end{document}')
+
+        with open(filename, 'w') as f:
+            f.write('\n'.join(out) + '\n')
+
+
     # def fromMesh(self, mesh, camera_matrix, projection="perspective", **kwargs)
     #     try:
     #         from Meshes import Mesh

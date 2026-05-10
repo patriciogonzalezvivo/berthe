@@ -55,7 +55,6 @@ class Text(Element):
         self.auto_flip = kwargs.pop('auto_flip', False )
         self.align = kwargs.pop('align', 'center');
         self.weight = kwargs.pop('weight', 100)
-        self.stroke_width = self.weight * self.head_width / 100.0
         if self.align == 'center':
             self._center = pos
         elif self.align == 'left':
@@ -124,24 +123,33 @@ class Text(Element):
         toCenter = transform(bbox.center, rotate=rotate, scale=self.scale)
         translate = [ self.center[0] - toCenter[0], self.center[1] - toCenter[1] ]
 
-        # weight=100 → 1 pass; weight=200 → 3 passes; weight=300 → 5 passes …
-        # Each extra 100 weight units adds one pass either side, spaced head_width apart.
-        n_extra = max(0, round((self.weight - 100) / 100.0))
-        offsets = [i * self.head_width for i in range(-n_extra, n_extra + 1)]
+        # weight=100 → 1 pass at offset 0.
+        # spread = how far out from centre (in mm) each side.
+        # Passes are evenly spaced by head_width, symmetric around 0.
+        # Intermediate weights (150, 220 …) produce the right fractional spread.
+        spread = (self.weight / 100.0 - 1.0) * self.head_width
+        if spread <= 1e-9:
+            offsets = [0.0]
+        else:
+            offsets = []
+            o = -spread
+            while o <= spread + 1e-9:
+                offsets.append(o)
+                o += self.head_width
 
         polys = []
         for line in result:
             points = [ transform(p, translate=translate, rotate=rotate, scale=self.scale) for p in line.points ]
             for off in offsets:
                 pts = _offset_stroke(points, off)
-                polys.append( Polyline(pts, head_width=self.head_width) )
+                polys.append( Polyline(pts) )
 
         return polys
 
 
     def getStrokePath(self, **kwargs):
         polys = self.getPolylines(**kwargs)
-        return Path([ poly.getPoints() for poly in polys ], head_width=self.head_width, color=self.color)
+        return Path([ poly.getPoints() for poly in polys ], color=self.color)
 
 
     def getPoints(self):
@@ -206,14 +214,7 @@ class Text(Element):
         return path
         
 
-    def getStrokePath(self, **kwargs):
-        path = Path()
-        polys = self.getPolylines(**kwargs)
 
-        for poly in polys:
-            path.add( poly.getStrokePath(**kwargs) )
-
-        return path
 
 
     

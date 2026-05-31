@@ -29,3 +29,6 @@ from .convert import *
 
 from .Pattern import Pattern
 from .pattern_generators import *
+
+from . import looom
+from .looom import is_looom_svg, looom_frame_to_png

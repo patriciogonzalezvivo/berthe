@@ -6,6 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path as _Path
+
 from collections import defaultdict
 from .pattern_generators import *
 
@@ -14,6 +20,69 @@ from .Polygon import Polygon
 from .Image import Image
 from .Pattern import *
 from .tools import transform
+
+
+# ---------------------------------------------------------------------------
+# SVG rasterisation / conversion (rsvg-convert backend, no Inkscape needed)
+# ---------------------------------------------------------------------------
+
+def _rsvg_convert(*args) -> bool:
+    """Run rsvg-convert with *args*. Returns True on success."""
+    bin_ = shutil.which('rsvg-convert')
+    if bin_ is None:
+        return False
+    result = subprocess.run([bin_] + list(args), capture_output=True, text=True)
+    return result.returncode == 0
+
+
+def svg_to_png(svg_source, output_path, *, width: int = 800) -> bool:
+    """Rasterise an SVG file (or SVG string) to a PNG using rsvg-convert.
+
+    Args:
+        svg_source:  Path to an SVG file, or an SVG document as a ``str``.
+        output_path: Destination PNG path.
+        width:       Output width in pixels (height scales proportionally).
+
+    Returns:
+        ``True`` on success, ``False`` when rsvg-convert is not available or fails.
+    """
+    if shutil.which('rsvg-convert') is None:
+        print("  [berthe] rsvg-convert not found — install with: brew install librsvg")
+        return False
+
+    output_path = _Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    is_content = isinstance(svg_source, str) and svg_source.lstrip().startswith('<')
+    if is_content:
+        tmp_fd, tmp_svg = tempfile.mkstemp(suffix='.svg')
+        try:
+            with os.fdopen(tmp_fd, 'w', encoding='utf-8') as fh:
+                fh.write(svg_source)
+            return _rsvg_convert('-f', 'png', '-w', str(width), '-o', str(output_path), tmp_svg)
+        finally:
+            try:
+                os.unlink(tmp_svg)
+            except OSError:
+                pass
+    else:
+        return _rsvg_convert('-f', 'png', '-w', str(width), '-o', str(output_path), str(svg_source))
+
+
+def svg_to_pdf(svg_path, output_path) -> bool:
+    """Convert an SVG file to PDF using rsvg-convert.
+
+    Args:
+        svg_path:    Path to the source SVG file.
+        output_path: Destination PDF path.
+
+    Returns:
+        ``True`` on success, ``False`` when rsvg-convert is not available or fails.
+    """
+    if shutil.which('rsvg-convert') is None:
+        print("  [berthe] rsvg-convert not found — install with: brew install librsvg")
+        return False
+    return _rsvg_convert('-f', 'pdf', '-o', str(output_path), str(svg_path))
 
 
 def ImageDrawingToPath(image_path, epsilon_factor=0.0001, scale=1.0, translate=(0,0)):

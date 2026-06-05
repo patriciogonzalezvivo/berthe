@@ -30,12 +30,11 @@ The two wrapfig keys recognised inside ``:::wrapfig`` blocks::
 from __future__ import annotations
 
 import math
-import os
 import re
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from .convert import svg_to_png
 
 
 # ---------------------------------------------------------------------------
@@ -592,51 +591,13 @@ def looom_frame_to_png(
     )
 
     # ------------------------------------------------------------------ #
-    # 4.  Rasterise via Inkscape                                           #
+    # 4.  Rasterise via Berthe (rsvg-convert)                             #
     # ------------------------------------------------------------------ #
     output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
     height = max(1, int(round(width * vb_h / vb_w))) if vb_w > 0 else width
 
-    tmp_fd, tmp_svg = tempfile.mkstemp(suffix='.svg')
-    try:
-        with os.fdopen(tmp_fd, 'w', encoding='utf-8') as fh:
-            fh.write(static_svg)
-
-        result = subprocess.run(
-            [
-                'inkscape',
-                '--export-type=png',
-                f'--export-width={width}',
-                f'--export-height={height}',
-                f'--export-filename={output_path}',
-                tmp_svg,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-
-        if result.returncode != 0 or not output_path.exists():
-            print(f"  [looom] inkscape failed (rc={result.returncode}):\n"
-                  f"          {result.stderr.strip()}")
-            return False
-
-        print(f"  [looom] → {output_path}  ({width}×{height} px)")
-        return True
-
-    except FileNotFoundError:
-        print("  [looom] inkscape not found; cannot rasterise Looom SVG frames.")
+    if not svg_to_png(static_svg, output_path, width=width):
         return False
-    except subprocess.TimeoutExpired:
-        print(f"  [looom] inkscape timed out converting {svg_path}.")
-        return False
-    except Exception as exc:
-        print(f"  [looom] Unexpected error converting {svg_path}: {exc}")
-        return False
-    finally:
-        try:
-            os.unlink(tmp_svg)
-        except OSError:
-            pass
+
+    print(f"  [looom] → {output_path}  ({width}×{height} px)")
+    return True

@@ -43,6 +43,9 @@ class Surface(Group):
         elif size == 'V3_landscape':
             self.width = 430.0
             self.height = 297.0
+        elif size == '11in x 14in':
+            self.width = 279.4
+            self.height = 355.6
         elif size == '12in x 16in':
             self.width = 304.8
             self.height = 406.4

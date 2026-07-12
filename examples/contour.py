@@ -13,7 +13,7 @@ path = Path(vector_paths)
 axi = Surface(size='12in x 16in')
 
 for coorner in coorners:
-    axi.circle( center=coorner, radius=marks*0.5)
+    axi.circle( coorner, marks*0.5)
     axi.line( [coorner[0]-marks, coorner[1]], [coorner[0]+marks, coorner[1]])
     axi.line( [coorner[0], coorner[1]-marks], [coorner[0], coorner[1]+marks])
 

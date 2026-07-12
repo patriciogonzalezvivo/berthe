@@ -33,16 +33,16 @@ for threshold in range(samples):
 contours_pattern = contours.getScaled(scale).getPattern(width=heightmap.width*scale, height=heightmap.height*scale)
 # contours_pattern.transform = [100.0, 150.0]  
 axi.pattern( contours_pattern, translate=[0.0, 150.0]  )
-axi.text( "ImageContourToPath > Pattern", center=[50.0, 250.0], scale=0.1 )
+axi.text( "ImageContourToPath > Pattern", [50.0, 250.0], scale=0.1 )
 
 axi.pattern( GrayscaleToPattern(grayscale, threshold=0.5, invert=invert, pattern_resolution=200, pattern_angle=45, mask=mask), translate=[0.0, 15.0] )
-axi.text( "GrayscaleToPattern", center=[50.0, 100.0], scale=0.1 )
+axi.text( "GrayscaleToPattern", [50.0, 100.0], scale=0.1 )
 
 axi.pattern( HeightmapToPattern(heightmap, camera_angle=angle, grayscale=grayscale, threshold=threshold_value, invert=invert, pattern_resolution=pattern_resolution, pattern_angle=45, mask=mask), translate=[100.0, 20.0] )
-axi.text( "HeightmapToPattern", center=[150.0, 100.0], scale=0.1 )
+axi.text( "HeightmapToPattern", [150.0, 100.0], scale=0.1 )
 
 contours_filtered_pattern = HeightmapToPattern(heightmap, camera_angle=angle, grayscale=grayscale, threshold=threshold_value, invert=invert, pattern=contours_pattern, mask=mask)
 axi.pattern( contours_filtered_pattern, translate=[100.0, 150.0] )
-axi.text( "ImageContourToPath > Pattern > HeightmapToPattern ", center=[150.0, 250.0], scale=0.1 )
+axi.text( "ImageContourToPath > Pattern > HeightmapToPattern ", [150.0, 250.0], scale=0.1 )
 
 axi.toSVG('image.svg')

@@ -27,51 +27,51 @@ y = MARGIN
 
 axi = Surface()
 
-axi.text( "rect", center=[MARGIN, y-10], scale=0.1 )
+axi.text( "rect", [MARGIN, y-10], scale=0.1 )
 for col in range(cols):
     if col == cols-1:
-        axi.rect(center=[x + col * col_width, y], size=[col_width*0.8, col_width*0.8], rotate=col*ang_step, stroke_width=col+0.2, fill=True)
+        axi.rect([x + col * col_width, y], [col_width*0.8, col_width*0.8], rotate=col*ang_step, stroke_width=col+0.2, fill=True)
     else:
-        axi.rect(center=[x + col * col_width, y], size=[col_width*0.8, col_width*0.8], rotate=col*ang_step, stroke_width=col+0.2)
+        axi.rect([x + col * col_width, y], [col_width*0.8, col_width*0.8], rotate=col*ang_step, stroke_width=col+0.2)
 
-    axi.rect(center=[x + col * col_width, y + col_height], size=[col_width*0.8, col_width*0.8], rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
+    axi.rect([x + col * col_width, y + col_height], [col_width*0.8, col_width*0.8], rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
 
 y += col_height * 2.0
 
-axi.text( "hex", center=[MARGIN, y-10], scale=0.1 )
+axi.text( "hex", [MARGIN, y-10], scale=0.1 )
 for col in range(cols):
     if col == cols-1:
-        axi.hex(center=[x + col * col_width, y], radius=col_width*0.3, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
+        axi.hex([x + col * col_width, y], col_width*0.3, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
     else:
-        axi.hex(center=[x + col * col_width, y], radius=col_width*0.3, rotate=col*ang_step, stroke_width=col+0.2)
+        axi.hex([x + col * col_width, y], col_width*0.3, rotate=col*ang_step, stroke_width=col+0.2)
 
-    axi.hex(center=[x + col * col_width, y + col_height], radius=col_width*0.3, rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
+    axi.hex([x + col * col_width, y + col_height], col_width*0.3, rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
 
 y += col_height * 2.0
 
-axi.text( "circle", center=[MARGIN, y-10], scale=0.1 )
+axi.text( "circle", [MARGIN, y-10], scale=0.1 )
 for col in range(cols):
-    axi.circle(center=[x + col * col_width, y], radius=col_width*0.25, rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
+    axi.circle([x + col * col_width, y], col_width*0.25, rotate=col*ang_step, scale=scl_step+scl_step*col*2.0, fill=True)
 
     if col == cols-1:
-        axi.circle(center=[x + col * col_width, y + col_height], radius=col_width*0.25, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
+        axi.circle([x + col * col_width, y + col_height], col_width*0.25, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
     else:
-        axi.circle(center=[x + col * col_width, y + col_height], radius=col_width*0.25, rotate=col*ang_step, stroke_width=col+0.2)
+        axi.circle([x + col * col_width, y + col_height], col_width*0.25, rotate=col*ang_step, stroke_width=col+0.2)
 
     if col == cols-1:
-        axi.circle(center=[x + col * col_width, y + col_height * 2.0], radius=col_width*0.25, open_angle=90, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
+        axi.circle([x + col * col_width, y + col_height * 2.0], col_width*0.25, open_angle=90, rotate=col*ang_step, stroke_width=col+0.2, fill=True)
     else:
-        axi.circle(center=[x + col * col_width, y + col_height * 2.0], radius=col_width*0.25, open_angle=90, rotate=col*ang_step, stroke_width=col+0.2)
+        axi.circle([x + col * col_width, y + col_height * 2.0], col_width*0.25, open_angle=90, rotate=col*ang_step, stroke_width=col+0.2)
 
 y += col_height * 2.0
 
-axi.text( "line", center=[MARGIN, y+col_height-10], scale=0.1 )
+axi.text( "line", [MARGIN, y+col_height-10], scale=0.1 )
 for col in range(cols):
     axi.line([-col_width*0.5, 0.0], [col_width*0.5,0.0], translate=[x + col * col_width, y + col_height], rotate=col*ang_step, stroke_width=col*0.25+0.2)
 
 y += col_height
 
-axi.text( "polyline", center=[MARGIN, y+col_height-10], scale=0.1 )
+axi.text( "polyline", [MARGIN, y+col_height-10], scale=0.1 )
 poly = Polyline( [ [-col_width*0.5, 0.0], [col_width*0.5, 0.0], [0.0, col_width*0.5], [0.0, -col_width*0.5] ] )
 for col in range(cols):
     poly.translate = [x + col * col_width, y + col_height]
@@ -90,7 +90,7 @@ axi.polyline( poly.getOffset(10.0), stroke_width=1.0 )
 
 y += col_height * 2.
 
-axi.text( "text", center=[MARGIN, y+col_height-10], scale=0.1 )
+axi.text( "text", [MARGIN, y+col_height-10], scale=0.1 )
 for col in range(cols):
     stroke = col*axi.head_width+axi.head_width
     axi.text( "Hi", [x + col * col_width, y + col_height], scale=0.2, rotate=col*ang_step, stroke_width=stroke)

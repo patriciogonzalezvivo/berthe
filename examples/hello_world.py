@@ -10,8 +10,8 @@ from Surface import Surface
 
 paper = Surface()
 
-paper.circle(center=(paper.width*0.5, paper.height*0.5), radius=paper.width*0.5 )
-paper.rect(center=(paper.width*0.5, paper.height*0.5), size=(paper.width, paper.height) )
-paper.text(text='hello world', center=(paper.width*0.5, paper.height*0.5) )
+paper.circle((paper.width*0.5, paper.height*0.5), paper.width*0.5 )
+paper.rect((paper.width*0.5, paper.height*0.5), (paper.width, paper.height) )
+paper.text('hello world', (paper.width*0.5, paper.height*0.5) )
 
 paper.toSVG('hello_world.svg')

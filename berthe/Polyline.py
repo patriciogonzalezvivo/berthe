@@ -156,6 +156,12 @@ class Polyline(Element):
             self.normals.append(normal)
             self.tangents.append(tangent)
 
+        # include the length of the final segment too, so getPerimeter()
+        # (self.lengths[-1]) returns the true total instead of the total minus
+        # the last segment -- otherwise getResampledBySpacing (which walks
+        # 0..getPerimeter()) silently never samples the last segment at all.
+        self.lengths.append(length)
+
         normal, tangent = self._calcData(N)
         self.normals.append(normal)
         self.tangents.append(tangent)

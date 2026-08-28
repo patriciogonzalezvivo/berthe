@@ -600,6 +600,13 @@ class Path(Element):
         return self.getScaled(scale, scale).getCentered(width, height)
 
 
+    def getScaledToFill(self, width, height, padding=0):
+        width -= padding * 2
+        height -= padding * 2
+        scale = max(width / self.width, height / self.height)
+        return self.getScaled(scale, scale).getCentered(width, height)
+
+
     def getRotateAndScaleToFit(self, width, height, padding=0, step=1):
         values = []
         width -= padding * 2

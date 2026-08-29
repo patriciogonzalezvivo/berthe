@@ -20,6 +20,7 @@ class Circle(Element):
         self._radius = radius
         self.open_angle = kwargs.pop('open_angle', 0)
         self.open_centered = kwargs.pop('open_centered', False)
+        self._resolution = kwargs.pop('resolution', None)
 
 
     @property
@@ -75,9 +76,11 @@ class Circle(Element):
 
     def getPoints(self, **kwargs):
         rx, ry = self.radius
-        
-        resolution = max(rx, ry)
-        resolution = int(remap(resolution, 1.0, 180.0, 18.0, 180.0))
+
+        resolution = self._resolution
+        if resolution is None:
+            resolution = max(rx, ry)
+            resolution = int(remap(resolution, 1.0, 180.0, 18.0, 180.0))
         resolution = kwargs.pop('resolution', resolution)
         
         points = []
@@ -110,7 +113,7 @@ class Circle(Element):
             rad_y_target = ry - (self.stroke_width * self.head_width) * 0.5
 
             while rad_x > rad_x_target or rad_y > rad_y_target:
-                path.append( Circle([cx, cy],[rad_x, rad_y], open_angle=self.open_angle, rotate=self.rotate).getPoints() )
+                path.append( Circle([cx, cy],[rad_x, rad_y], open_angle=self.open_angle, rotate=self.rotate, resolution=self._resolution).getPoints() )
                 rad_x = max(rad_x - self.head_width, rad_x_target)
                 rad_y = max(rad_y - self.head_width, rad_y_target)
 
@@ -135,7 +138,7 @@ class Circle(Element):
             rad_y_target = 0.0
 
             while rad_x > rad_x_target or rad_y > rad_y_target:
-                path.append( Circle([cx, cy],[rad_x, rad_y], open_angle=self.open_angle, rotate=self.rotate).getPoints() )
+                path.append( Circle([cx, cy],[rad_x, rad_y], open_angle=self.open_angle, rotate=self.rotate, resolution=self._resolution).getPoints() )
                 rad_x = max(rad_x - self.head_width, rad_x_target)
                 rad_y = max(rad_y - self.head_width, rad_y_target)
 
